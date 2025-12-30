@@ -1,0 +1,5 @@
+{
+    "getUserDetails": "SELECT id, username, password, api_key, status, created_at, updated_at FROM ollama_users WHERE username = %s ",
+    "registerUsers": "INSERT INTO ollama_users (username, password) VALUES (%s, %s) RETURNING id, username, status, created_at, updated_at;",
+    "getAllUsers": "SELECT id, username, password, api_key, status, created_at, updated_at FROM ollama_users;"
+}

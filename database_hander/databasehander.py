@@ -1,14 +1,18 @@
 import os
-from psycopg2 import pool
-import sys
-sys.path.append("/home/saransh/gitprojects/inferproject/llamaAuth")
-from packets.packet import PostgresConfig, DatabaseSchema
-from contextlib import contextmanager
 import logging
+from psycopg2 import pool
+from contextlib import contextmanager
+import json
+import os
+# TODO: REMOVE LATER
+import sys
+sys.path.append("/Users/saranshpandya/gitprojects/inferproject/llamaAuth/")
+from packets.packet import PostgresConfig, DatabaseSchema
 
 from dotenv import load_dotenv
 load_dotenv()
 
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 class DatabaseManager:
@@ -22,6 +26,9 @@ class DatabaseManager:
             host=db_config.host,
             port=db_config.port
         )
+        
+        with open(os.getenv("QUERY_PATH")) as file:
+            self.queries = json.load(file)
     
     @contextmanager
     def get_db_conn(self):
@@ -42,32 +49,63 @@ class DatabaseManager:
 
     
     def get_user(self, username):
-        query = "SELECT * FROM ollama_users WHERE username = %s;"
-
-        with self.get_db_conn() as conn:
-            with conn.cursor() as cur:
-                cur.execute(query, (username,))
-                return cur.fetchall()
-    
+        try:
+            with self.get_db_conn() as conn:
+                with conn.cursor() as cur:
+                    cur.execute(self.queries['getUserDetails'], (username,))
+                    return cur.fetchall()
+        
+        except Exception as e:
+            logger.exception(f"Error with database: {e}")
+            raise RuntimeError(e)
+        
     def get_user_details(self, username) -> list[DatabaseSchema]:
-        query = """
-            SELECT id, username, password, api_key, status, created_at, updated_at
-            FROM ollama_users
-            WHERE username = %s;
-        """
+        try:
+            with self.get_db_conn() as conn:
+                with conn.cursor() as cur:
+                    cur.execute(self.queries['getUserDetails'], (username,))
+                    rows = cur.fetchall()
 
-        with self.get_db_conn() as conn:
-            with conn.cursor() as cur:
-                cur.execute(query, (username,))
-                rows = cur.fetchall()
+                    columns = [desc[0] for desc in cur.description]
 
-                columns = [desc[0] for desc in cur.description]
+                    return [
+                        DatabaseSchema(**dict(zip(columns, row)))
+                        for row in rows
+                    ]
 
-                return [
-                    DatabaseSchema(**dict(zip(columns, row)))
-                    for row in rows
-                ]
-                
+        except Exception as e:
+            logger.exception(f"Error in database: {e}")
+            raise RuntimeError(e)
+        
+    # Get all users
+    def get_all_users(self) -> list[DatabaseSchema]:
+        try:
+            with self.get_db_conn() as conn:
+                with conn.cursor() as cur:
+                    cur.execute(self.queries['getAllUsers'])
+                    rows = cur.fetchall()
+
+                    columns = [desc[0] for desc in cur.description]
+
+                    return [
+                        DatabaseSchema(**dict(zip(columns, row)))
+                        for row in rows
+                    ]
+
+        except Exception as e:
+            logger.exception(f"Error in database: {e}")
+            raise RuntimeError(e)
+        
+        
+    # TODO: Create a database entry for new user. 
+    def register_user(self, username: str, passwordHash: str):
+        try:
+            pass
+        
+        except Exception as e:
+            logger.exception(f"Error in database: {e}")
+            raise RuntimeError(e)    
+
 
 if __name__ == "__main__":
     host = os.getenv("POSTGRES_HOST", "")
@@ -87,5 +125,5 @@ if __name__ == "__main__":
 
     db_manager = DatabaseManager(db_config=db_config)
 
-    user_details = db_manager.get_user_details(username="alice")
+    user_details = db_manager.get_all_users()
     print(user_details)

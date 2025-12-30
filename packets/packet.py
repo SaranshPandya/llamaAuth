@@ -1,6 +1,6 @@
 from typing import Literal, Optional
 from datetime import datetime
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from enum import Enum
 
 class UserStatus(str, Enum):
@@ -19,7 +19,7 @@ class DatabaseSchema(BaseModel):
     id: int
     username: str
     password: str
-    api_key: str
+    api_key: Optional[str] = None
     status: Literal['active', 'deactivated']
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
