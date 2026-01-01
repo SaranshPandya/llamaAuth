@@ -30,4 +30,3 @@ class PostgresConfig(BaseModel):
     password: str
     user: str
     dbname: str
-

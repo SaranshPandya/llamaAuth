@@ -4,9 +4,15 @@ from psycopg2 import pool
 from contextlib import contextmanager
 import json
 import os
+
+
 # TODO: REMOVE LATER
+# Added to relevtively import the package
 import sys
-sys.path.append("/Users/saranshpandya/gitprojects/inferproject/llamaAuth/")
+from pathlib import Path
+BASE_DIR = Path(__file__).resolve()
+project_root = BASE_DIR.parents[1]
+sys.path.append(project_root)
 from packets.packet import PostgresConfig, DatabaseSchema
 
 from dotenv import load_dotenv
