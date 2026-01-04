@@ -1,4 +1,4 @@
-CREATE TYPE user_status AS ENUM (
+CREATE TYPE status AS ENUM (
     'active',
     'deactivated'
 );

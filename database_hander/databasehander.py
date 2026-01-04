@@ -1,6 +1,6 @@
 import os
 import logging
-from psycopg2 import pool
+from psycopg2 import pool, errors
 from contextlib import contextmanager
 import json
 import os
@@ -9,11 +9,8 @@ import os
 # TODO: REMOVE LATER
 # Added to relevtively import the package
 import sys
-from pathlib import Path
-BASE_DIR = Path(__file__).resolve()
-project_root = BASE_DIR.parents[1]
-sys.path.append(project_root)
-from packets.packet import PostgresConfig, DatabaseSchema
+sys.path.append("/Users/saranshpandya/gitprojects/inferproject/llamaAuth/")
+from schemas.packet import PostgresConfig, DatabaseSchema
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -79,6 +76,9 @@ class DatabaseManager:
                         for row in rows
                     ]
 
+        except errors.UniqueViolation as e:
+            logger.exception(f"UNIQUE ERROR by me username already exists: {e}")
+        
         except Exception as e:
             logger.exception(f"Error in database: {e}")
             raise RuntimeError(e)
@@ -104,14 +104,79 @@ class DatabaseManager:
         
         
     # TODO: Create a database entry for new user. 
-    def register_user(self, username: str, passwordHash: str):
+    def register_user(self, username: str, passwordHash: str, email: str, age: int):
+        try:
+            with self.get_db_conn() as conn:
+                with conn.cursor() as cur:
+                    cur.execute(self.queries['registerUsers'], (username, email, passwordHash, age,))
+                    id = cur.fetchone()
+                    return id
+        
+        except errors.UniqueViolation as e:
+            logger.exception(f"Username: {username} already exists.") 
+        
+        except Exception as e:
+            logger.exception(f"Error in database: {e}")
+            raise RuntimeError(e)
+        
+    def authenticate_user(self, username: str = None, email: str = None):
+        try:
+            if username:
+                auth_key = username
+            
+            elif email:
+                auth_key = email
+            
+            else:
+                raise ValueError("Neither username or email provided")
+            
+            with self.get_db_conn() as conn:
+                with conn.cursor() as curr:
+                    curr.execute(self.queries["getUsersDetailNameorEmail"], (auth_key, auth_key, ))    
+
+                    rows = curr.fetchone()
+                    
+                    if not rows:
+                        return
+                     
+                    columns = [desc[0] for desc in curr.description]
+                    
+                    # Since this will only give one row, list in output is not needed.
+                    # Optimize later. 
+                    return [
+                        DatabaseSchema(**dict(zip(columns, rows))) 
+                    ]
+                    
+        except Exception as e:
+            logger.exception(f"Error occured while fetching user details for authentication.")
+            raise RuntimeError(e)
+
+    # Add generated api key to user's entry
+    def update_api_key(self, api_key_hash: str, email: str):
         try:
             pass
         
         except Exception as e:
-            logger.exception(f"Error in database: {e}")
-            raise RuntimeError(e)    
+            logger.exception(f"Error occured while updating API key in database: {e}")
+            raise RuntimeError(e)
 
+
+def load_postgres_config() -> PostgresConfig:
+    try:
+        return PostgresConfig(
+            host=os.environ["POSTGRES_HOST"],
+            port=int(os.environ.get("POSTGRES_PORT", 5432)),
+            user=os.environ["POSTGRES_USER"],
+            password=os.environ["POSTGRES_PASSWORD"],
+            dbname=os.environ["DBNAME"],
+            sslmode=os.environ.get("POSTGRES_SSLMODE", "prefer"),
+        )
+    except Exception as e:
+        logger.exception(f"Unable to load postgres configs: {e}")
+        raise RuntimeError(f"Unable to load postgres configs: {e}")
+
+# only initialized once.
+_db_manager = DatabaseManager(db_config=load_postgres_config())
 
 if __name__ == "__main__":
     host = os.getenv("POSTGRES_HOST", "")
@@ -131,5 +196,5 @@ if __name__ == "__main__":
 
     db_manager = DatabaseManager(db_config=db_config)
 
-    user_details = db_manager.get_all_users()
+    user_details = db_manager.register_user(username="Saransh", passwordHash="this is password", email="its.saranshpandya@gmail.com", age=23)
     print(user_details)

@@ -1,7 +1,8 @@
 from typing import Literal, Optional
 from datetime import datetime
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 from enum import Enum
+from dataclasses import dataclass
 
 class UserStatus(str, Enum):
     active = "active"
@@ -30,3 +31,24 @@ class PostgresConfig(BaseModel):
     password: str
     user: str
     dbname: str
+    sslmode: Optional[str] = None
+    
+    
+@dataclass(frozen=True)
+class Migration:
+    filename: str
+    body: str
+    checksum: str
+
+
+class RegisterUser(BaseModel):
+    username: str
+    email: EmailStr
+    password: str
+    age: int
+
+
+class AuthenticateUserInput(BaseModel):
+    username: Optional[str] = None
+    email: Optional[EmailStr] = None
+    password: str

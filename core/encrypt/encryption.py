@@ -3,7 +3,7 @@ from typing import Hashable
 import logging
 
 logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(f"[{__file__, __name__}] ")
+logger = logging.getLogger(f"[{__name__}] ")
 
 async def create_hash(string: str, hash_depth: int = 5) -> str:
         """Creates SHA256 hash of string with iterative hashing."""
@@ -16,7 +16,6 @@ async def create_hash(string: str, hash_depth: int = 5) -> str:
                         encrypt = sha256(string=encoded).hexdigest()
                         current_encrypt = encrypt
                         
-                print(encrypt)
                 return encrypt
 
         except Exception as e:
