@@ -31,8 +31,8 @@ async def register_user(req: RegisterUser):
         return {"status": "failed", "response": "unable to register user."}
         # raise RuntimeError(f"Error occured while registering a user: {e}")
 
-@_app.post("/authenticate_user")
-async def authenticate_user(req: AuthenticateUserInput):
+@_app.post("/login")
+async def login(req: AuthenticateUserInput):
     try:
         passwordHash = await create_hash(string=req.password)
         users = _db_manager.authenticate_user(
