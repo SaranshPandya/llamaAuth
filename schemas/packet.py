@@ -52,3 +52,10 @@ class AuthenticateUserInput(BaseModel):
     username: Optional[str] = None
     email: Optional[EmailStr] = None
     password: str
+
+class Chat(BaseModel):
+    query: str
+    api_key: str
+    model: str
+    stream: bool = False
+    base_url: Optional[str] = None 

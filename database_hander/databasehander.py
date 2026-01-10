@@ -6,10 +6,6 @@ import json
 import os
 
 
-# TODO: REMOVE LATER
-# Added to relevtively import the package
-import sys
-sys.path.append("/Users/saranshpandya/gitprojects/inferproject/llamaAuth/")
 from schemas.packet import PostgresConfig, DatabaseSchema
 
 from dotenv import load_dotenv
@@ -152,13 +148,32 @@ class DatabaseManager:
             raise RuntimeError(e)
 
     # Add generated api key to user's entry
-    def update_api_key(self, api_key_hash: str, email: str):
+    def update_api_key(self, api_key_hash: str, id: int):
         try:
-            pass
+            with self.get_db_conn() as conn:
+                with conn.cursor() as curr:
+                    curr.execute(self.queries["setAPIKey"], (api_key_hash, id,))
+                    
+                    rows = curr.fetchone()
+                    
+                    return rows    
         
         except Exception as e:
             logger.exception(f"Error occured while updating API key in database: {e}")
             raise RuntimeError(e)
+        
+    def authenticateAPIKey(self, api_key_hash: str):
+        try:
+            with self.get_db_conn() as conn:
+                with conn.cursor() as curr:
+                    curr.execute(self.queries['authenticateAPIKey'], (api_key_hash,))
+                    
+                    rows = curr.fetchone()
+                    
+                    return rows
+        
+        except Exception as e:
+            logger.exception(f"Error getting response from database for API authentication")
 
 
 def load_postgres_config() -> PostgresConfig:
@@ -196,5 +211,6 @@ if __name__ == "__main__":
 
     db_manager = DatabaseManager(db_config=db_config)
 
-    user_details = db_manager.register_user(username="Saransh", passwordHash="this is password", email="its.saranshpandya@gmail.com", age=23)
-    print(user_details)
+    # user_details = db_manager.register_user(username="Saransh", passwordHash="this is password", email="its.saranshpandya@gmail.com", age=23)
+    api_key = db_manager.authenticateAPIKey(api_key_hash="c7b66625cf416bd6a23ca4309220849d23c413e735295b7c25626309c74d724e")
+    print(api_key)
