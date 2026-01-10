@@ -6,14 +6,15 @@ from core.encrypt.encryption import create_hash
 from core.encrypt.api_key_generator import key_generator
 
 import logging
+import traceback
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 _app = FastAPI()
 
-# Raise appropriate HTTP error
-@_app.post("/register", status_code=201)
+
+@_app.post("/register")
 async def register_user(req: RegisterUser):
     try:
         passwordHash = await create_hash(string=req.password)
@@ -26,8 +27,11 @@ async def register_user(req: RegisterUser):
         
         return {"status": "success", "data": {"userId": user_id}}
     except Exception as e:
-        logger.exception(f"Error occured while registering a user: {e}")
-        return {"status": "failed", "response": "unable to register user."}
+        logger.exception(f"Error occured while registering a user: {traceback.print_exc(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error registering user."
+        )
         # raise RuntimeError(f"Error occured while registering a user: {e}")
 
 @_app.post("/login")
@@ -62,7 +66,7 @@ async def login(req: AuthenticateUserInput, getAPI: bool = False):
         raise
     
     except Exception as e:
-        logging.exception(f"Error while authenticating user: {e}")
+        logging.exception(f"Error while authenticating user: {traceback.print_exc(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Unable to authenticate"
@@ -82,7 +86,7 @@ async def get_api(req: AuthenticateUserInput):
             return {"status": "success", "message": "Kindly save this API key because you will not be able to see it again.", "api_key": api_key}
         
     except Exception as e:
-        logger.exception(f"Error generating API key")
+        logger.exception(f"Error generating API key: {traceback.print_exc(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Unable to generate API key."
@@ -129,7 +133,7 @@ async def chat(req: Chat):
         raise
             
     except Exception as e:
-        logger.exception(f"Error while generating model response: {e}")
+        logger.exception(f"Error while generating model response: {traceback.print_exc(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Unable to generate model response"        
