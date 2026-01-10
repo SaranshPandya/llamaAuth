@@ -1,0 +1,8 @@
+{
+    "getUserDetails": "SELECT id, username, password, api_key, status, created_at, updated_at FROM ollama_users WHERE username = %s ",
+    "registerUsers": "INSERT INTO store (username, email, password, age) VALUES (%s, %s, %s, %s) RETURNING id;",
+    "getAllUsers": "SELECT id, username, password, api_key, status, created_at, updated_at FROM ollama_users;",
+    "getUsersDetailNameorEmail": "SELECT id, username, email, password, status FROM store WHERE (username = %s OR email = %s) LIMIT 1;",
+    "setAPIKey": "UPDATE store SET api_key = %s, updated_at = NOW() WHERE id = %s RETURNING id;",
+    "authenticateAPIKey": "SELECT username, api_key FROM store WHERE api_key = %s"
+}
