@@ -7,12 +7,23 @@ from core.encrypt.api_key_generator import key_generator
 
 import logging
 import traceback
+from datetime import datetime
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 _app = FastAPI()
 
+@_app.get("/health")
+async def health():
+    try:
+        return {"heath": f"{(datetime.now()).strftime('%d/%m/%Y %H:%M:%S')} - System Healthy"}
+    except HTTPException as exc:
+        logger.exception(f"Error in the server: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Server not healthy."
+        )
 
 @_app.post("/register")
 async def register_user(req: RegisterUser):
